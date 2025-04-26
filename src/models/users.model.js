@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { type } from "os";
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -24,6 +25,14 @@ const userSchema = new mongoose.Schema({
   admin: {
     type: Boolean,
     default: false,
+  },
+  resetToken: {
+    type: String,
+    default: null,
+  },
+  resetTokenExpire: {
+    type: Date,
+    default: null,
   },
 });
 

@@ -5,55 +5,29 @@ import bcrypt from "bcrypt";
 
 class AuthController {
   async loginUser(req, res) {
-    // try {
-    //   const userLogin = req.body;
-    //   const username = userLogin.name;
-    //   const password = userLogin.password;
-    //   console.log("username:", username);
-    //   const responseSer = await AuthService.loginUser(username, password);
-    //   if (!responseSer)
-    //     return res.status(500).json({
-    //       success: false,
-    //       message: error.message,
-    //     });
-    //   req.user = token;
+    try {
+      const { username, password } = req.body;
+      console.log("username:", username);
 
-    //   return res.status(200).json({
-    //     success: true,
-    //     // data: userLogin
-    //     data: token,
-    //   });
-    // } catch (error) {
-    //   console.log(error);
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: error.message,
-    //   });
-    // }
-    const { username, password } = req.body;
-    console.log("username:", username);
-
-    const responseSer = await AuthService.loginUser(username, password);
-    if (!responseSer) {
-      return res.status(401).json({
+      const responseSer = await AuthService.loginUser(username, password);
+      if (!responseSer) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid username or password",
+        });
+      }
+      req.user = responseSer;
+      return res.status(200).json({
+        success: true,
+        token: responseSer,
+      });
+    } catch (error) {
+      console.log("Login error:", error.message);
+      return res.status(500).json({
         success: false,
-        message: "Invalid username or password",
+        message: "Internal server error",
       });
     }
-
-    req.user = responseSer;
-
-    return res.status(200).json({
-      success: true,
-      token: responseSer,
-    });
-  }
-  catch(error) {
-    console.log("Login error:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
   }
   //REGISTER
   async registerUser(req, res) {
@@ -73,6 +47,58 @@ class AuthController {
       //Save to DB
       const user = await newUser.save();
       res.status(200).json(user);
+    } catch (error) {
+      console.log(error);
+      return res.status(401).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+  //FORGOT PASSWORD
+  async forgotPassword(req, res) {
+    try {
+      const mail = req.body.email;
+      console.log("Email", mail);
+      const responseSer = await AuthService.forgotPassword(mail);
+      if (!responseSer) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid email",
+        });
+      }
+      req.user = responseSer; // để sau này kiểm tra với middleware
+
+      return res.status(200).json({
+        success: true,
+        tokenReset: responseSer,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(401).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+  //RESET PASSWORD
+  async resetPassword(req, res) {
+    try {
+      const { password, resetToken } = req.body;
+      console.log("New password :", password, "\nToken reset: ", resetToken);
+      const responseSer = await AuthService.resetPassword(password, resetToken);
+      if (!responseSer || responseSer.success == false) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid token reset",
+        });
+      }
+      //req.user = responseSer;
+
+      return res.status(200).json({
+        success: true,
+        message: "Password has been successfully reset.",
+      });
     } catch (error) {
       console.log(error);
       return res.status(401).json({

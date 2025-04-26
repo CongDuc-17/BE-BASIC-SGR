@@ -27,6 +27,3 @@ connectDB()
     console.error("Database connection failed:", error);
     process.exit(1);
   });
-
-//ROUTES
-app.use("/v1/auth", authRoute);
