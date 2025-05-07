@@ -4,6 +4,10 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { mailService } from "../../service/mail.service.js";
 import { createJWT } from "../../service/createJWT.service.js";
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
 const userRepo = new UserRepository();
 
 class AuthService {
@@ -78,6 +82,76 @@ class AuthService {
       };
     } catch (error) {
       console.error("Error:", error.message);
+    }
+  }
+  //UPLOAD IMAGE
+  constructor() {
+    dotenv.config();
+  }
+
+  async uploadImages(username, folderPath) {
+    try {
+      // Cấu hình Cloudinary
+      cloudinary.config({
+        cloud_name: process.env.CLOUD_NAME,
+        api_key: process.env.API_KEY,
+        api_secret: process.env.API_SECRET,
+      });
+
+      console.log("Cloudinary Config:", cloudinary.config());
+
+      // Đường dẫn thư mục chứa ảnh
+      //const folderPath = "D:/CongDuc-17/BE Basic/BE-SGR/imageForUpload";
+
+      // Lấy danh sách tất cả các file trong thư mục
+      const files = fs
+        .readdirSync(folderPath)
+        .filter(
+          (file) =>
+            file.endsWith(".jpg") ||
+            file.endsWith(".png") ||
+            file.endsWith(".jpeg")
+        );
+
+      console.log(`🔍 Tìm thấy ${files.length} ảnh trong thư mục.`);
+      const uploaded = [];
+      // Upload từng ảnh
+      for (const file of files) {
+        const filePath = path.join(folderPath, file);
+        console.log(`📤 Đang upload: ${file} ...`);
+
+        try {
+          const uploadResult = await cloudinary.uploader.upload(filePath, {
+            folder: "uploaded_images", // Đặt thư mục trên Cloudinary
+            resource_type: "image",
+          });
+
+          console.log(`✅ Upload thành công: ${file}`);
+          console.log("🔗 URL:", uploadResult.secure_url);
+
+          //Lưu vào DB
+          const user = await UserModel.findOneAndUpdate(
+            { username },
+            { $push: { linkImages: uploadResult.secure_url } },
+            { new: true }
+          );
+          if (user) {
+            console.log("✅ Lưu vào DB thành công");
+            console.log("🔗 URL:", uploadResult.secure_url);
+            uploaded.push(uploadResult.secure_url);
+          } else console.log(`⚠️ Không tìm thấy user: ${username}`);
+        } catch (uploadError) {
+          console.error(`❌ Lỗi khi upload ${file}:`, uploadError);
+        }
+      }
+      console.log("🎉 Hoàn tất upload tất cả ảnh!");
+      return {
+        success: true,
+        message: `Đã upload ${uploaded.length} ảnh.`,
+        images: uploaded,
+      };
+    } catch (error) {
+      console.error("Lỗi:", error);
     }
   }
 }

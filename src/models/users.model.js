@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  linkImages: {
+    type: [String],
+    default: [],
+  },
 });
 
 const UserModel = mongoose.model("User", userSchema);

@@ -107,6 +107,28 @@ class AuthController {
       });
     }
   }
+  //UPLOAD IMAGES
+  async uploadImages(req, res) {
+    try {
+      const { username, folderPath } = req.body;
+      const responseSer = await AuthService.uploadImages(username, folderPath);
+      if (!responseSer || responseSer.success == false) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid username",
+        });
+      }
+      return res.status(200).json({
+        responseSer,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(401).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
 }
 
 export default new AuthController();
