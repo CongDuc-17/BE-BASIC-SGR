@@ -22,10 +22,6 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: String,
   },
-  admin: {
-    type: Boolean,
-    default: false,
-  },
   resetToken: {
     type: String,
     default: null,
@@ -37,6 +33,11 @@ const userSchema = new mongoose.Schema({
   linkImages: {
     type: [String],
     default: [],
+  },
+  role: {
+    type: String,
+    enum: ["member", "admin"],
+    default: "member",
   },
 });
 

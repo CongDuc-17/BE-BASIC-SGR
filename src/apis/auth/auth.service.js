@@ -88,7 +88,6 @@ class AuthService {
   constructor() {
     dotenv.config();
   }
-
   async uploadImages(username, folderPath) {
     try {
       // Cấu hình Cloudinary
@@ -119,16 +118,13 @@ class AuthService {
       for (const file of files) {
         const filePath = path.join(folderPath, file);
         console.log(`📤 Đang upload: ${file} ...`);
-
         try {
           const uploadResult = await cloudinary.uploader.upload(filePath, {
             folder: "uploaded_images", // Đặt thư mục trên Cloudinary
             resource_type: "image",
           });
-
           console.log(`✅ Upload thành công: ${file}`);
           console.log("🔗 URL:", uploadResult.secure_url);
-
           //Lưu vào DB
           const user = await UserModel.findOneAndUpdate(
             { username },
@@ -152,6 +148,31 @@ class AuthService {
       };
     } catch (error) {
       console.error("Lỗi:", error);
+    }
+  }
+
+  //GET INFO USER
+  async getInfoUser(username) {
+    try {
+      const user = await UserModel.findOne({ username: username });
+      return user;
+    } catch (error) {
+      console.error("Error:", error.message);
+      return null;
+    }
+  }
+  //CHANGE INFO USER
+  async changeInfoUser(username, newInfo) {
+    try {
+      const user = await UserModel.findOneAndUpdate(
+        { username: username },
+        newInfo,
+        { new: true }
+      );
+      return user;
+    } catch (error) {
+      console.error("Error:", error.message);
+      return null;
     }
   }
 }

@@ -2,7 +2,6 @@ import { json } from "express";
 import UserModel from "../../models/users.model.js";
 import AuthService from "./auth.service.js";
 import bcrypt from "bcrypt";
-
 class AuthController {
   async loginUser(req, res) {
     try {
@@ -36,12 +35,16 @@ class AuthController {
       const hashed = await bcrypt.hash(req.body.password, salt);
 
       //create new user
+      let role = "member";
+      if (req.body.role === "admin") role = "admin";
+
       const newUser = await new UserModel({
         username: req.body.username,
         name: req.body.name,
         email: req.body.email,
         createdAt: req.body.createdAt,
         password: hashed,
+        role: role,
       });
 
       //Save to DB
@@ -125,6 +128,47 @@ class AuthController {
       console.log(error);
       return res.status(401).json({
         success: false,
+        message: error.message,
+      });
+    }
+  }
+  //GET USER
+  async getInfoUser(req, res) {
+    try {
+      const user = await AuthService.getInfoUser(decoded.username);
+      if (!user)
+        return res
+          .status(401)
+          .json({ success: false, message: "User not found" });
+      return res.status(200).json({
+        user,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(401).json({
+        message: error.message,
+      });
+    }
+  }
+  //CHANGE INFO USER
+  async changeInfoUser(req, res) {
+    try {
+      const { name, email } = req.body;
+      const newInfo = {
+        name,
+        email,
+      };
+      const user = await AuthService.changeInfoUser(decoded.username, newInfo);
+      if (!user)
+        return res
+          .status(401)
+          .json({ success: false, message: "User not found" });
+      return res.status(200).json({
+        message: "User information updated successfully",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(401).json({
         message: error.message,
       });
     }
