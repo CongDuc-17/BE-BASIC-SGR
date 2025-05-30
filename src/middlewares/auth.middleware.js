@@ -5,7 +5,7 @@ export const authMiddleware = (req, res, next) => {
   if (!authHeader) {
     return res.status(401).json({
       success: false,
-      message: "No token provided in auth.middleware.js",
+      message: "No token provided",
     });
   }
   const token = authHeader.startsWith("Bearer ")
@@ -14,20 +14,26 @@ export const authMiddleware = (req, res, next) => {
   if (!token) {
     return res.status(401).json({
       success: false,
-      message: "No token provided in auth.middleware.js",
+      message: "No token provided",
     });
   }
   const decoded = decodedJWT(token);
   if (!decoded) {
     return res.status(401).json({
-      message: "Unauthorized in auth.middleware.js",
+      message: "Unauthorized",
     });
   }
-  if (decoded.role === "admin" || decoded.role === "member") {
-    req.user = decoded;
-    return next();
-  }
-  return res.status(403).json({
-    message: "Permission denied in auth.middleware.js",
-  });
+  req.user = decoded;
+  next();
 };
+
+export const roleMiddleware =
+  (...roles) =>
+  (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Permission denied" });
+    }
+    next();
+  };
+
+//(...roles): co the truyen vao 1 mang chua nhieu role

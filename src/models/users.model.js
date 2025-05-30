@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
-import { type } from "os";
-
+import { ObjectId } from "mongodb";
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -39,6 +38,7 @@ const userSchema = new mongoose.Schema({
     enum: ["member", "admin"],
     default: "member",
   },
+  teamId: { type: ObjectId, ref: "Team" },
 });
 
 const UserModel = mongoose.model("User", userSchema);

@@ -1,59 +1,34 @@
-import { json } from "express";
-import UserModel from "../../models/users.model.js";
 import AuthService from "./auth.service.js";
-import bcrypt from "bcrypt";
 class AuthController {
   async loginUser(req, res) {
     try {
       const { username, password } = req.body;
-      console.log("username:", username);
-
       const responseSer = await AuthService.loginUser(username, password);
-      if (!responseSer) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid username or password",
-        });
-      }
-      req.user = responseSer;
       return res.status(200).json({
-        success: true,
         token: responseSer,
       });
     } catch (error) {
       console.log("Login error:", error.message);
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error",
+      return res.status(401).json({
+        message: error.message,
       });
     }
   }
   //REGISTER
   async registerUser(req, res) {
     try {
-      const salt = await bcrypt.genSalt(10);
-      const hashed = await bcrypt.hash(req.body.password, salt);
-
-      //create new user
-      let role = "member";
-      if (req.body.role === "admin") role = "admin";
-
-      const newUser = await new UserModel({
+      const newUser = {
         username: req.body.username,
         name: req.body.name,
         email: req.body.email,
-        createdAt: req.body.createdAt,
-        password: hashed,
-        role: role,
-      });
-
-      //Save to DB
-      const user = await newUser.save();
+        password: req.body.password,
+        role: req.body.role,
+      };
+      const user = await AuthService.register(newUser);
       res.status(200).json(user);
     } catch (error) {
       console.log(error);
       return res.status(401).json({
-        success: false,
         message: error.message,
       });
     }
@@ -135,7 +110,7 @@ class AuthController {
   //GET USER
   async getInfoUser(req, res) {
     try {
-      const user = await AuthService.getInfoUser(decoded.username);
+      const user = await AuthService.getInfoUser(req.user.id);
       if (!user)
         return res
           .status(401)
@@ -153,12 +128,14 @@ class AuthController {
   //CHANGE INFO USER
   async changeInfoUser(req, res) {
     try {
-      const { name, email } = req.body;
+      const { name, email, username, password } = req.body;
       const newInfo = {
         name,
         email,
+        username,
+        password,
       };
-      const user = await AuthService.changeInfoUser(decoded.username, newInfo);
+      const user = await AuthService.changeInfoUser(req.user.id, newInfo);
       if (!user)
         return res
           .status(401)

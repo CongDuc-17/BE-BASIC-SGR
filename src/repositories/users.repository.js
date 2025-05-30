@@ -1,15 +1,17 @@
-import UserModel from '../models/users.model.js';
+import UserModel from "../models/users.model.js";
 
-export class UserRepository {
+class UserRepository {
   async create(dto) {
-    const { name, email, password } = dto;
+    const { name, email, password, username, role } = dto;
 
     const result = await UserModel.create({
       name,
       email,
       password,
+      username,
+      role,
     });
-
+    if (!result) throw new Error("Created failed");
     return {
       name,
       email,
@@ -23,7 +25,7 @@ export class UserRepository {
     });
 
     if (!user) {
-      throw new Error('not found');
+      throw new Error("not found");
     }
 
     return {
@@ -35,23 +37,42 @@ export class UserRepository {
 
   async getAll() {
     const users = await UserModel.find();
-    if (!users) throw new Error('Not found user');
-    
-    return users.map(user => ({
+    if (!users) throw new Error("Not found user");
+
+    return users.map((user) => ({
       id: user._id.toString(),
       name: user.name,
-      email: user.email
+      email: user.email,
     }));
   }
 
   async deleteOneById(id) {
     const deletedUser = await UserModel.findOneAndDelete({ _id: id }).lean();
-    if (!deletedUser) throw new Error('not found');
-    
+    if (!deletedUser) throw new Error("not found");
+
     return {
       id: String(deletedUser._id),
       name: deletedUser.name,
       email: deletedUser.email,
     };
   }
+
+  async updateOneById(id, data) {
+    const updateUser = await UserModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          name: data.name,
+          email: data.email,
+          username: data.username,
+          password: data.password,
+        },
+      },
+      { new: true }
+    );
+    if (!updateUser) throw new Error("Not found");
+    return updateUser;
+  }
 }
+
+export default new UserRepository();

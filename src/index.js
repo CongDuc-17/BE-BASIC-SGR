@@ -3,7 +3,6 @@ import fs from "fs";
 import connectDB from "./databases/database.connection.js";
 import routers from "./apis/index.js";
 import errorHandler from "./middlewares/error.middleware.js";
-import authRoute from "./apis/auth/auth.router.js";
 
 const app = express();
 const port = process.env.PORT || 3000;

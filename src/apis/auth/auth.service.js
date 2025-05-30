@@ -1,33 +1,41 @@
 import UserModel from "../../models/users.model.js";
-import { UserRepository } from "../../repositories/users.repository.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { mailService } from "../../service/mail.service.js";
 import { createJWT } from "../../service/createJWT.service.js";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
-const userRepo = new UserRepository();
-
+import UserRepository from "../../repositories/users.repository.js";
 class AuthService {
   //LOGIN
   async loginUser(username, password) {
     try {
       const userCurrent = await UserModel.findOne({ username: username });
-      if (!userCurrent) return { success: false, message: "Wrong username" };
+      if (!userCurrent) {
+        throw new Error("username incorrect!");
+      }
       const pass = await bcrypt.compare(password, userCurrent.password);
-      console.log(pass);
-      if (!pass) return { success: false, message: "Wrong password" };
-      // Tạo token
+      if (!pass) throw new Error("password incorrect!");
       const token = createJWT(userCurrent);
       return token;
     } catch (error) {
       console.error("Error:", error.message);
+      throw error;
     }
   }
   //REGISTER
-
+  async register(data) {
+    try {
+      const salt = await bcrypt.genSalt(10);
+      data.password = await bcrypt.hash(data.password, salt);
+      const user = await UserRepository.create(data);
+      return user;
+    } catch (error) {
+      console.error("Error:", error.message);
+      throw error;
+    }
+  }
   // FORGOT PASSWORD
   async forgotPassword(mail) {
     try {
@@ -152,27 +160,27 @@ class AuthService {
   }
 
   //GET INFO USER
-  async getInfoUser(username) {
+  async getInfoUser(id) {
     try {
-      const user = await UserModel.findOne({ username: username });
+      const user = await UserRepository.getOneById(id);
       return user;
     } catch (error) {
       console.error("Error:", error.message);
-      return null;
+      throw error;
     }
   }
   //CHANGE INFO USER
-  async changeInfoUser(username, newInfo) {
+  async changeInfoUser(id, data) {
     try {
-      const user = await UserModel.findOneAndUpdate(
-        { username: username },
-        newInfo,
-        { new: true }
-      );
+      if (data.password) {
+        const salt = await bcrypt.genSalt(10);
+        data.password = await bcrypt.hash(data.password, salt);
+      }
+      const user = await UserRepository.updateOneById(id, data);
       return user;
     } catch (error) {
       console.error("Error:", error.message);
-      return null;
+      throw error;
     }
   }
 }

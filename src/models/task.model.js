@@ -7,7 +7,7 @@ const taskSchema = new mongoose.Schema({
   documentLink: String,
   githubRepo: String,
   creator: { type: ObjectId, ref: "User" },
-  //teamId: ObjectId,
+  teamId: { type: ObjectId, ref: "Team" },
   subBoards: [{ type: ObjectId, ref: "SubBoard" }],
   comments: [{ type: ObjectId, ref: "Comment" }],
   createdAt: Date,
